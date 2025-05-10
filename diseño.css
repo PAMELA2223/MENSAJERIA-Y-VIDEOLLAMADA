@@ -1,0 +1,104 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+}
+
+header {
+    background-color: #075e54;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+#chat, #videoLlamada {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+    padding: 1rem;
+}
+
+#mensajes {
+    height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: #f9f9f9;
+}
+
+.mensaje-enviado {
+    background-color: #dcf8c6;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    max-width: 70%;
+    margin-left: auto;
+    text-align: right;
+}
+
+.mensaje-recibido {
+    background-color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    max-width: 70%;
+    border: 1px solid #eee;
+}
+
+.entrada-mensaje {
+    display: flex;
+    gap: 8px;
+}
+
+.entrada-mensaje input {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.entrada-mensaje button {
+    padding: 8px 16px;
+    background-color: #075e54;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#videos {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+#videos video {
+    background-color: #333;
+    border-radius: 4px;
+    width: 48%;
+}
+
+#btnLlamar {
+    padding: 8px 16px;
+    background-color: #128c7e;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:disabled {
+    background-color: #cccccc !important;
+    cursor: not-allowed;
+}

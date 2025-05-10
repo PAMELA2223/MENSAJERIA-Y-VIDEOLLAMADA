@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App de Mensajería con Video Mejorada</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #caf0f3;
+    }
+    header {
+      background-color: #407ef3;
+      color: rgb(254, 255, 255);
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    section {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      height: fit-content;
+    }
+    #usuariosConectados {
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+    }
+    #mensajes {
+      height: 400px;
+      overflow-y: auto;
+      border: 1px solid #e1e4e8;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+    }
+    .mensaje {
+      padding: 10px 15px;
+      margin-bottom: 10px;
+      border-radius: 18px;
+      max-width: 70%;
+      word-wrap: break-word;
+      position: relative;
+    }
+    .mensaje-enviado {
+      background-color: #75c8ff;
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 5px;
+    }
+    .mensaje-recibido {
+      background-color: #e9ecef;
+      color: black;
+      margin-right: auto;
+      border-bottom-left-radius: 5px;
+    }
+    .mensaje-info {
+      font-size: 0.8rem;
+      opacity: 0.8;
+      margin-top: 3px;
+    }
+    .entrada-mensaje {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #entrada {
+      flex-grow: 1;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      outline: none;
+      transition: border 0.3s;
+    }
+    #entrada:focus {
+      border-color: #4b1fc5;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4b1fc5;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #87d3ff;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    #videos {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .video-container {
+      position: relative;
+      background-color: #181a42;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    video {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .video-label {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background-color: rgba(0,0,0,0.6);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    #miVideo {
+      transform: scaleX(-1); /* Efecto espejo para video local */
+    }
+    #controlesLlamada {
+      display: none;
+      gap: 8px;
+      margin-top: 1rem;
+      justify-content: center;
+    }
+    .control-btn {
+      padding: 8px 16px;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #btnColgar {
+      background-color: #e74c3c;
+    }
+    #btnColgar:hover {
+      background-color: #c0392b;
+    }
+    .notificacion {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #4b1fc5;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+      animation: slideIn 0.5s forwards;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    @media (max-width: 768px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+      #videos {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>App de Mensajería con Video Mejorada</h1>
+  </header>
+
+  <main>
+    <section id="chat">
+      <h2>Chat Grupal</h2>
+      <div id="usuariosConectados">
+        <strong>Usuarios conectados:</strong> <span id="listaUsuarios">Cargando...</span>
+      </div>
+      <div id="mensajes"></div>
+      <div class="entrada-mensaje">
+        <input type="text" id="entrada" placeholder="Escribe un mensaje..." autocomplete="off">
+        <button id="btnEnviar">Enviar</button>
+      </div>
+    </section>
+
+    <section id="videoLlamada">
+      <h2>Videollamada Grupal</h2>
+      <div id="videos">
+        <div class="video-container">
+          <video id="miVideo" autoplay muted playsinline></video>
+          <div class="video-label">Tú</div>
+        </div>
+        <!-- Los videos remotos se agregarán dinámicamente aquí -->
+      </div>
+      <button id="btnLlamar">Unirse a Videollamada</button>
+      <div id="controlesLlamada">
+        <button id="btnMute" class="control-btn" title="Silenciar">🔇</button>
+        <button id="btnCamara" class="control-btn" title="Apagar Cámara">📷</button>
+        <button id="btnColgar" class="control-btn" title="Colgar">📞</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Variables globales mejoradas
+    const config = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' }
+      ]
+    };
+    
+    let socket;
+    let miStream;
+    let peerConnections = {};
+    let roomId = 'sala-general';
+    let usuarioId = 'usuario-' + Math.random().toString(36).substr(2, 9);
+    let nombreUsuario = prompt("Ingresa tu nombre de usuario:") || "Usuario-" + usuarioId.substr(0, 4);
+    let esModerador = false;
+    let dataChannel;
+
+    // Inicialización mejorada
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Configurar UI
+      document.title = `${nombreUsuario} - App de Mensajería`;
+      
+      // Configurar event listeners
+      document.getElementById('btnEnviar').addEventListener('click', enviarMensaje);
+      document.getElementById('entrada').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') enviarMensaje();
+      });
+      
+      document.getElementById('btnLlamar').addEventListener('click', unirseAVideollamada);
+      document.getElementById('btnColgar').addEventListener('click', salirDeVideollamada);
+      document.getElementById('btnMute').addEventListener('click', toggleMute);
+      document.getElementById('btnCamara').addEventListener('click', toggleCamara);
+      
+      // Iniciar conexión con Socket.io
+      await conectarSocketIO();
+      
+      // Iniciar video local
+      await iniciarVideoLocal();
+      
+      // Mostrar notificación de conexión
+      mostrarNotificacion(`Conectado como ${nombreUsuario}`);
+    });
+
+    // Función para conectar con Socket.io (reemplaza XMPP)
+    async function conectarSocketIO() {
+      // En un entorno real, reemplaza esta URL con tu servidor Socket.io
+      const socketServerUrl = 'http://localhost:3000';
+      
+      // Cargar Socket.io dinámicamente
+      await cargarScript('https://cdn.socket.io/4.5.4/socket.io.min.js');
+      
+      socket = io(socketServerUrl, {
+        auth: {
+          usuarioId,
+          nombreUsuario,
+          roomId
+        }
+      });
+      
+      // Configurar manejadores de eventos
+      socket.on('connect', () => {
+        console.log('Conectado al servidor de signaling');
+        document.getElementById('btnEnviar').disabled = false;
+        document.getElementById('btnLlamar').disabled = false;
+      });
+      
+      socket.on('usuariosConectados', actualizarListaUsuarios);
+      
+      socket.on('nuevoMensaje', (data) => {
+        mostrarMensaje(data.remitente, data.mensaje, data.timestamp, false);
+      });
+      
+      socket.on('nuevoUsuario', (usuario) => {
+        mostrarNotificacion(`${usuario} se ha unido al chat`);
+      });
+      
+      socket.on('usuarioDesconectado', (usuario) => {
+        mostrarNotificacion(`${usuario} ha abandonado el chat`);
+        // Eliminar video del usuario si está en la llamada
+        const videoElement = document.getElementById(`video-${usuario}`);
+        if (videoElement) videoElement.remove();
+        // Eliminar conexión Peer si existe
+        if (peerConnections[usuario]) {
+          peerConnections[usuario].close();
+          delete peerConnections[usuario];
+        }
+      });
+      
+      socket.on('oferta', async ({ from, offer }) => {
+        console.log('Recibida oferta de', from);
+        await manejarOferta(from, offer);
+      });
+      
+      socket.on('respuesta', async ({ from, answer }) => {
+        console.log('Recibida respuesta de', from);
+        await manejarRespuesta(from, answer);
+      });
+      
+      socket.on('candidatoICE', async ({ from, candidate }) => {
+        console.log('Recibido candidato ICE de', from);
+        await manejarCandidatoICE(from, candidate);
+      });
+    }
+    
+    // Función para cargar scripts dinámicamente
+    function cargarScript(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+    
+    // Función para actualizar lista de usuarios conectados
+    function actualizarListaUsuarios(usuarios) {
+      const lista = usuarios.map(u => u === nombreUsuario ? `${u} (tú)` : u).join(', ');
+      document.getElementById('listaUsuarios').textContent = lista;
+    }
+    
+    // Función para mostrar mensajes en la UI (mejorada)
+    function mostrarMensaje(remitente, texto, timestamp = new Date().toISOString(), esMio = remitente === nombreUsuario) {
+      const divMensajes = document.getElementById('mensajes');
+      const divMensaje = document.createElement('div');
+      
+      const hora = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      divMensaje.className = esMio ? 'mensaje mensaje-enviado' : 'mensaje mensaje-recibido';
+      divMensaje.innerHTML = `
+        <strong>${remitente}</strong>
+        <div>${texto}</div>
+        <div class="mensaje-info">${hora}</div>
+      `;
+      
+      divMensajes.appendChild(divMensaje);
+      divMensajes.scrollTop = divMensajes.scrollHeight;
+    }
+    
+    // Función para enviar mensajes (mejorada)
+    function enviarMensaje() {
+      const texto = document.getElementById('entrada').value.trim();
+      if (!texto) return;
+      
+      const timestamp = new Date().toISOString();
+      
+      // Enviar mensaje al servidor
+      socket.emit('enviarMensaje', {
+        remitente: nombreUsuario,
+        mensaje: texto,
+        timestamp,
+        roomId
+      });
+      
+      // Mostrar mensaje localmente
+      mostrarMensaje(nombreUsuario, texto, timestamp, true);
+      document.getElementById('entrada').value = '';
+    }
+    
+    // Función para mostrar notificaciones
+    function mostrarNotificacion(mensaje) {
+      const notificacion = document.createElement('div');
+      notificacion.className = 'notificacion';
+      notificacion.textContent = mensaje;
+      document.body.appendChild(notificacion);
+      
+      setTimeout(() => {
+        notificacion.style.animation = 'slideIn 0.5s reverse forwards';
+        setTimeout(() => notificacion.remove(), 500);
+      }, 3000);
+    }
+    
+    // Función para iniciar video local (mejorada)
+    async function iniciarVideoLocal() {
+      try {
+        miStream = await navigator.mediaDevices.getUserMedia({ 
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user'
+          }, 
+          audio: true 
+        });
+        document.getElementById('miVideo').srcObject = miStream;
+      } catch (error) {
+        console.error('Error al acceder a la cámara:', error);
+        mostrarNotificacion('No se pudo acceder a la cámara/micrófono');
+        
+        // Intentar solo audio si el video falla
+        try {
+          miStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mostrarNotificacion('Conectado solo con audio');
+        } catch (audioError) {
+          console.error('Error al acceder al micrófono:', audioError);
+          mostrarNotificacion('No se pudo acceder a ningún dispositivo multimedia');
+        }
+      }
+    }
+    
+    // Función para unirse a videollamada (mejorada)
+    async function unirseAVideollamada() {
+      try {
+        // Notificar a otros usuarios que nos estamos uniendo
+        socket.emit('unirseAVideollamada', { roomId });
+        
+        // Configurar DataChannel para mensajes de control
+        dataChannel = new BroadcastChannel('videollamada-control');
+        dataChannel.onmessage = manejarMensajeControl;
+        
+        // Obtener lista de usuarios en la llamada y establecer conexiones con ellos
+        socket.emit('obtenerUsuariosEnLlamada', { roomId }, (usuarios) => {
+          usuarios.forEach(usuario => {
+            if (usuario !== nombreUsuario) {
+              establecerConexionPeer(usuario);
+            }
+          });
+        });
+        
+        // Mostrar controles de llamada
+        document.getElementById('btnLlamar').style.display = 'none';
+        document.getElementById('controlesLlamada').style.display = 'flex';
+        
+        mostrarNotificacion('Te has unido a la videollamada');
+        
+      } catch (error) {
+        console.error('Error al unirse a videollamada:', error);
+        mostrarNotificacion('Error al unirse a la videollamada');
+      }
+    }
+    
+    // Función para establecer conexión peer-to-peer con otro usuario
+    async function establecerConexionPeer(usuarioDestino) {
+      if (peerConnections[usuarioDestino]) return;
+      
+      console.log(`Estableciendo conexión con ${usuarioDestino}`);
+      
+      const pc = new RTCPeerConnection(config);
+      peerConnections[usuarioDestino] = pc;
+      
+      // Añadir stream local
+      if (miStream) {
+        miStream.getTracks().forEach(track => pc.addTrack(track, miStream));
+      }
+      
+      // Manejar candidatos ICE
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit('candidatoICE', {
+            to: usuarioDestino,
+            candidate: event.candidate,
+            roomId
+          });
+        }
+      };
+      
+      // Manejar stream remoto
+      pc.ontrack = (event) => {
+        console.log(`Recibido stream de ${usuarioDestino}`);
+        
+        // Verificar si ya tenemos un video para este usuario
+        let videoElement = document.getElementById(`video-${usuarioDestino}`);
+        
+        if (!videoElement) {
+          // Crear nuevo contenedor de video
+          const videoContainer = document.createElement('div');
+          videoContainer.className = 'video-container';
+          videoContainer.id = `container-${usuarioDestino}`;
+          
+          videoElement = document.createElement('video');
+          videoElement.id = `video-${usuarioDestino}`;
+          videoElement.autoplay = true;
+          videoElement.playsinline = true;
+          
+          const label = document.createElement('div');
+          label.className = 'video-label';
+          label.textContent = usuarioDestino;
+          
+          videoContainer.appendChild(videoElement);
+          videoContainer.appendChild(label);
+          document.getElementById('videos').appendChild(videoContainer);
+        }
+        
+        // Asignar el stream al elemento de video
+        videoElement.srcObject = event.streams[0];
+      };
+      
+      // Crear oferta
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        
+        socket.emit('oferta', {
+          to: usuarioDestino,
+          offer,
+          roomId
+        });
+        
+      } catch (error) {
+        console.error('Error al crear oferta:', error);
+      }
+    }
+    
+    // Función para manejar ofertas entrantes
+    async function manejarOferta(from, offer) {
+      console.log(`Manejando oferta de ${from}`);
+      
+      if (!peerConnections[from]) {
+        const pc = new RTCPeerConnection(config);
+        peerConnections[from] = pc;
+        
+        // Añadir stream local
+        if (miStream) {
+          miStream.getTracks().forEach(track => pc.addTrack(track, miStream));
+        }
+        
+        // Manejar candidatos ICE
+        pc.onicecandidate = (event) => {
+          if (event.candidate) {
+            socket.emit('candidatoICE', {
+              to: from,
+              candidate: event.candidate,
+              roomId
+            });
+          }
+        };
+        
+        // Manejar stream remoto
+        pc.ontrack = (event) => {
+          console.log(`Recibido stream de ${from}`);
+          
+          let videoElement = document.getElementById(`video-${from}`);
+          
+          if (!videoElement) {
+            const videoContainer = document.createElement('div');
+            videoContainer.className = 'video-container';
+            videoContainer.id = `container-${from}`;
+            
+            videoElement = document.createElement('video');
+            videoElement.id = `video-${from}`;
+            videoElement.autoplay = true;
+            videoElement.playsinline = true;
+            
+            const label = document.createElement('div');
+            label.className = 'video-label';
+            label.textContent = from;
+            
+            videoContainer.appendChild(videoElement);
+            videoContainer.appendChild(label);
+            document.getElementById('videos').appendChild(videoContainer);
+          }
+          
+          videoElement.srcObject = event.streams[0];
+        };
+      }
+      
+      const pc = peerConnections[from];
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      
+      // Crear respuesta
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      
+      socket.emit('respuesta', {
+        to: from,
+        answer,
+        roomId
+      });
+    }
+    
+    // Función para manejar respuestas entrantes
+    async function manejarRespuesta(from, answer) {
+      console.log(`Manejando respuesta de ${from}`);
+      const pc = peerConnections[from];
+      if (!pc) return;
+      
+      await pc.setRemoteDescription(new RTCSessionDescription(answer));
+    }
+    
+    // Función para manejar candidatos ICE entrantes
+    async function manejarCandidatoICE(from, candidate) {
+      console.log(`Manejando candidato ICE de ${from}`);
+      const pc = peerConnections[from];
+      if (!pc) return;
+      
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (error) {
+        console.error('Error al añadir candidato ICE:', error);
+      }
+    }
+    
+    // Función para manejar mensajes de control (mute, cámara, etc.)
+    function manejarMensajeControl(event) {
+      const { tipo, usuario, estado } = event.data;
+      console.log(`Mensaje de control: ${tipo} de ${usuario} - ${estado}`);
+      
+      // Aquí podrías actualizar la UI para reflejar cambios en otros usuarios
+      // Por ejemplo, mostrar un icono cuando alguien está silenciado
+    }
+    
+    // Función para salir de videollamada (mejorada)
+    function salirDeVideollamada() {
+      // Notificar a otros usuarios que estamos saliendo
+      socket.emit('salirDeVideollamada', { roomId });
+      
+      // Cerrar todas las conexiones peer
+      Object.values(peerConnections).forEach(pc => pc.close());
+      peerConnections = {};
+      
+      // Cerrar DataChannel
+      if (dataChannel) {
+        dataChannel.close();
+        dataChannel = null;
+      }
+      
+      // Eliminar todos los videos remotos excepto el local
+      const videosContainer = document.getElementById('videos');
+      const videos = videosContainer.querySelectorAll('.video-container:not(:first-child)');
+      videos.forEach(video => video.remove());
+      
+      // Restaurar UI
+      document.getElementById('btnLlamar').style.display = 'block';
+      document.getElementById('controlesLlamada').style.display = 'none';
+      
+      mostrarNotificacion('Has salido de la videollamada');
+    }
+    
+    // Función para silenciar/microfono (mejorada)
+    function toggleMute() {
+      const audioTracks = miStream.getAudioTracks();
+      const nuevoEstado = !audioTracks[0].enabled;
+      
+      audioTracks.forEach(track => {
+        track.enabled = nuevoEstado;
+      });
+      
+      document.getElementById('btnMute').textContent = nuevoEstado ? '🔈' : '🔇';
+      document.getElementById('btnMute').title = nuevoEstado ? 'Silenciar' : 'Activar micrófono';
+      
+      // Notificar a otros usuarios
+      if (dataChannel) {
+        dataChannel.postMessage({
+          tipo: 'audio',
+          usuario: nombreUsuario,
+          estado: nuevoEstado ? 'activado' : 'silenciado'
+        });
+      }
+    }
+    
+    // Función para encender/apagar cámara (mejorada)
+    function toggleCamara() {
+      const videoTracks = miStream.getVideoTracks();
+      const nuevoEstado = !videoTracks[0].enabled;
+      
+      videoTracks.forEach(track => {
+        track.enabled = nuevoEstado;
+      });
+      
+      document.getElementById('btnCamara').textContent = nuevoEstado ? '📷' : '📵';
+      document.getElementById('btnCamara').title = nuevoEstado ? 'Apagar Cámara' : 'Encender Cámara';
+      
+      // Notificar a otros usuarios
+      if (dataChannel) {
+        dataChannel.postMessage({
+          tipo: 'video',
+          usuario: nombreUsuario,
+          estado: nuevoEstado ? 'activado' : 'desactivado'
+        });
+      }
+    }
+  </script>
+</body>
+</html>
